@@ -42,13 +42,12 @@
 #define int32_t long long int
 #define int16_t long int
 #define int8_t int
-#else
+#elif defined(__CC65__) || defined(__KICKC__)
 #define uint32_t unsigned long int
 #define uint16_t unsigned short int
-
 #define int32_t long int
 #define int16_t short int
-#define int8_t char
+#define int8_t signed char
 #endif
 
 #define uint8_t unsigned char

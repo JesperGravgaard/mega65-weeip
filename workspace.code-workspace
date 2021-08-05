@@ -1,0 +1,16 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"memory.h": "c",
+			"task.h": "c",
+			"debug.h": "c",
+			"cstring": "c",
+			"defs.h": "c"
+		}
+	}
+}

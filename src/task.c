@@ -10,6 +10,7 @@
 
 #include <stdio.h>
 #include "debug.h"
+#include "defs.h"
 
 // Periodically show the scheduled tasks 
 //#define DEBUG_TASKS
@@ -311,7 +312,7 @@ void task_periodic(void)
       * Remove from the list and run.
       */
      task->fun = NULL;
-     f(task->par);
+     (*f)(task->par);
    }
    tick();
 #ifdef DEBUG_TASKS

@@ -1,0 +1,40 @@
+{
+    "configurations": [
+        {
+            "name": "Mac",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "/Users/jespergravgaard/c64/kickc_local/include/",
+                "${workspaceFolder}/src/mega65-libc/kickc/include/",
+                "${workspaceFolder}/include/"
+            ],
+            "defines": [ 
+                "__KICKC__", 
+                "BYTE0(W)=*((char*)&(W))", 
+                "BYTE1(W)=*((char*)&(W)+1)", 
+                "BYTE2(W)=*((char*)&(W)+2)", 
+                "BYTE3(W)=*((char*)&(W)+3)", 
+                "WORD0(W)=*((unsigned int*)&(W))", 
+                "WORD1(W)=*((unsigned int*)&(W)+1)", 
+                "MAKEWORD(H,L)=(0x100*H+L)", 
+                "MAKEDWORD(H,L)=(0x10000*H+L)", 
+                "MAKEDWORD4(HH,HL,LH,LL)=(0x1000000*HH+0x10000*HL+0x100*LH+LL)", 
+                "__ma=__attribute__((ma))", 
+                "__mem=__attribute__((mem))", 
+                "__zp=__attribute__((zp))", 
+                "__interrupt(type)=__attribute__((interrupt,type))",
+                "__address(addr)=__attribute__((at(addr)))",
+                "__align(alignment)=_Alignas(alignment)",
+                "__stackcall=__attribute__((stackcall))"
+             ],
+            "macFrameworkPath": [
+                "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks"
+            ],
+            "compilerPath": "/usr/bin/clang",
+            "cStandard": "c11",
+            "cppStandard": "c++98",
+            "intelliSenseMode": "macos-clang-x64"
+        }
+    ],
+    "version": 4
+}

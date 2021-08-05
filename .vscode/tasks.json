@@ -1,0 +1,60 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [   
+        {
+            "label": "CC65 Build & Run (C64)",
+            "group": "build",
+            "type": "process",
+            "problemMatcher": [],
+            "command": ".vscode/cc65-x64sc.sh",
+            "args": [ "${file}" ]  
+        },       
+        {
+            "label": "KickC Build & Run",
+            "type": "shell",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": [],
+            "windows": {
+                "command": "c:/c64/kickc_local/bin/kickc.bat",
+                "args": [
+                    "-vasmout",
+                    "-Sc",
+                    "-Si",
+                    "-odir",
+                    "c:/c64/tmp/",
+                    "-e",
+                    "${relativeFile}"
+                ]              
+            },
+            "osx": {
+                "command": "~/c64/kickc_local/bin/kickc.sh",
+                "args": [
+                    "-I", "${workspaceFolder}/src/mega65-libc/kickc/include/",
+                    "-L", "${workspaceFolder}/src/mega65-libc/kickc/src/"
+                    "-I", "${workspaceFolder}/include/",
+                    "-L", "${workspaceFolder}/src/"
+                    "-v",
+                    "-vasmout",
+                    "-Sc",
+                    "-Si",
+                    "-odir", "~/c64/tmp/",
+                    "-e",
+                    "${relativeFile}"
+                ]                
+            }           
+        },
+        {
+            "label": "Path task",
+            "type": "shell",
+            "command": "echo $PATH"
+        }          
+    ]
+}
+
+
+

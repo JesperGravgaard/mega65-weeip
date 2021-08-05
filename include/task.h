@@ -38,7 +38,7 @@ extern volatile _uint32_t ticks;
 #define start_timer(X) (X+ticks.d)
 #define timeout(X) (ticks.d>X?1:0)
 
-extern bool_t wdt_tick;
+//extern bool_t wdt_tick;
 extern void tick();
 extern void task_init();
 extern void task_periodic(void);
