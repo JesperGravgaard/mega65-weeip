@@ -1,7 +1,0 @@
-make fetchkc.prg --dry-run --keep-going --print-directory
-make: Entering directory `/Users/jespergravgaard/c64/mega65/mega65-weeip'
-git submodule init
-git submodule update
-../../kickc_local/bin/kickc.sh -Wfragment -v -t mega65_c64 -a -I src/mega65-libc/kickc/include -I include -L src -L src/mega65-libc/kickc/src src/fetch.c src/socket.c src/nwk.c
-make: Leaving directory `/Users/jespergravgaard/c64/mega65/mega65-weeip'
- 
