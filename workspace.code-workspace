@@ -10,7 +10,9 @@
 			"task.h": "c",
 			"debug.h": "c",
 			"cstring": "c",
-			"defs.h": "c"
+			"defs.h": "c",
+			"cstdio": "c",
+			"locale": "c"
 		}
 	}
 }

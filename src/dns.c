@@ -168,7 +168,7 @@ byte_t dns_reply_handler (byte_t p)
 }
 
 unsigned char offset=0;
-unsigned char bytes=0;
+unsigned char _bytes=0;
 unsigned char value=0;
 
 bool_t dns_hostname_to_ip(char *hostname,IPV4 *ip)
@@ -177,12 +177,12 @@ bool_t dns_hostname_to_ip(char *hostname,IPV4 *ip)
   unsigned char next_retry,retries;
 
   // Check if IP address, and if so, parse directly.
-  offset=0; bytes=0; value=0;
+  offset=0; _bytes=0; value=0;
   while(hostname[offset]) {
     if (hostname[offset]=='.') {
-      ip->b[bytes++]=value;
+      ip->b[_bytes++]=value;
       value=0;
-      if (bytes>3) break;
+      if (_bytes>3) break;
     } else if (hostname[offset]>='0'&&hostname[offset]<='9') {
       value=value*10; value+=hostname[offset]-'0';
     } else
@@ -190,11 +190,11 @@ bool_t dns_hostname_to_ip(char *hostname,IPV4 *ip)
       break;
     offset++;
   }
-  if (bytes==3&&(!hostname[offset])) {ip->b[3]=value; return 1; }
+  if (_bytes==3&&(!hostname[offset])) {ip->b[3]=value; return 1; }
   
   dns_socket = socket_create(SOCKET_UDP);
-  socket_set_callback(dns_reply_handler);
-  socket_set_rx_buffer(dns_buf,sizeof dns_buf);
+  socket_set_callback(&dns_reply_handler);
+  socket_set_rx_buffer(dns_buf,sizeof(dns_buf));
   
   // Before we get any further, send an ARP query for the DNS server
   // (or if it isn't on the same network segment, for our gateway.)

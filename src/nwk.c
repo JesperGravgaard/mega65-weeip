@@ -27,7 +27,7 @@
   at the same time, we don't wait forever for initial retries on a
   local LAN
 */
-#define SOCKET_TIMEOUT(S) (TIMEOUT_TCP + 32*(RETRIES_TCP - S->retry))
+#define SOCKET_TIMEOUT(S) (TIMEOUT_TCP + (RETRIES_TCP - S->retry)*32)
 //#define DEBUG_TCP_RETRIES
 
 
@@ -74,10 +74,10 @@ IPV4 ip_broadcast;                  ///< Subnetwork broadcast address
 
 static uint16_t data_size,data_ofs;
 static _uint32_t seq;
-#define TCPH(X) _header.t.tcp.X
-#define ICMPH(X) _header.t.icmp.X
-#define UDPH(X) _header.t.udp.X
-#define IPH(X) _header.ip.X
+#define TCPH(X) _header.iph.t.tcp.X
+#define ICMPH(X) _header.iph.t.icmp.X
+#define UDPH(X) _header.iph.t.udp.X
+#define IPH(X) _header.iph.ip.X
 
 // Smaller MTU to save memory
 #define MTU 1000
@@ -188,8 +188,8 @@ byte_t nwk_tick (byte_t sig)
 #ifdef DEBUG_ACK
 	      debug_msg("scheduling nwk_upstream 0 0");
 #endif
-	      task_cancel(nwk_upstream);
-	      task_add(nwk_upstream, 0, 0,"upstream");
+	      task_cancel(&nwk_upstream);
+	      task_add(&nwk_upstream, 0, 0,"upstream");
             } 
         } else {
             /*
@@ -197,7 +197,9 @@ byte_t nwk_tick (byte_t sig)
              * Socket down.
              */
             _sckt->state = _IDLE;
-	    _sckt->callback(WEEIP_EV_DISCONNECT);
+
+       task_t callback = _sckt->callback;  
+	    (*callback)(WEEIP_EV_DISCONNECT);
 	    remove_rx_data(_sckt);
          }
       }
@@ -206,7 +208,7 @@ byte_t nwk_tick (byte_t sig)
    /*
     * Reschedule task for periodic execution.
     */
-   task_add(nwk_tick, TICK_TCP, 0,"nwktick");
+   task_add(&nwk_tick, TICK_TCP, 0,"nwktick");
    return 0;
 }
 
@@ -256,7 +258,7 @@ byte_t nwk_upstream (byte_t sig)
 #ifdef DEBUG_ACK
      debug_msg("scheduling nwk_upstream 2 0");
 #endif
-     task_add(nwk_upstream, 2, 0,"upstream");
+     task_add(&nwk_upstream, 2, 0,"upstream");
       return 0;
    }
    
@@ -374,8 +376,9 @@ byte_t nwk_upstream (byte_t sig)
          /*
           * Tell UDP that data was sent (no acknowledge).
           */
-	 _sckt->callback(WEEIP_EV_DATA_SENT);
-	 remove_rx_data(_sckt);
+         task_t callback = _sckt->callback;
+	      (*callback)(WEEIP_EV_DATA_SENT);
+	      remove_rx_data(_sckt);
       }
       
       /*
@@ -412,7 +415,7 @@ byte_t nwk_upstream (byte_t sig)
 #ifdef DEBUG_ACK
      debug_msg("scheduling nwk_upstream 5 0");
 #endif
-     task_add(nwk_upstream, 5, 0,"upstream");
+     task_add(&nwk_upstream, 5, 0,"upstream");
    }
    
    /*
@@ -448,8 +451,8 @@ void nwk_schedule_oo_ack(SOCKET *_sckt)
   debug_msg("asserting ack: Out-of-order rx");
   debug_msg("scheduling nwk_upstream 0 0");
 #endif
-  task_cancel(nwk_upstream);
-  task_add(nwk_upstream, 0, 0,"upstream");
+  task_cancel(&nwk_upstream);
+  task_add(&nwk_upstream, 0, 0,"upstream");
 }
 
 /**
@@ -467,7 +470,7 @@ void nwk_downstream(void)
    /*
     * Packet size.
     */
-   if(IPH(ver_length) != 0x45) goto drop;
+   if(IPH(ver_length) != 0x45) //TODO: goto drop;
    data_size = IPH(length);
    data_size = NTOHS(data_size);
 
@@ -476,7 +479,7 @@ void nwk_downstream(void)
     */
    checksum_init();
    ip_checksum((byte_t*)&_header, 20);
-   if(chks.u != 0xffff) goto drop;
+   if(chks.u != 0xffff) //TODO: goto drop;
 
 #if 0
    printf("\nI am %d.%d.%d.%d\n",ip_local.b[0],ip_local.b[1],ip_local.b[2],ip_local.b[3]);
@@ -494,9 +497,9 @@ void nwk_downstream(void)
       if(IPH(destination).d != ip_local.d)                     // unicast.
 	if(IPH(destination).d != ip_broadcast.d)                     // unicast.
 	  if (ip_local.d != 0x0000000L)                          // Waiting for DHCP configuration
-	    goto drop;                                           // not for us.
+	    ; //TODO: goto drop;                                           // not for us.
 
-   if(IPH(protocol) == IP_PROTO_ICMP) goto parse_icmp;
+   if(IPH(protocol) == IP_PROTO_ICMP) ; //TODO: goto parse_icmp;
 
    /*
     * Search for a waiting socket.
@@ -509,18 +512,18 @@ void nwk_downstream(void)
       } else {
 	if(IPH(protocol) != IP_PROTO_TCP) continue;
       }
-      if(_sckt->listening) goto found;                         // waiting for a connection.
+      if(_sckt->listening) ; //TODO: goto found;                         // waiting for a connection.
       // Don't check source if we are bound to broadcast
       if(_sckt->remIP.d!=0xffffffffL) {
 	if(_sckt->remIP.d != IPH(source).d) continue;            // another source.
       }
       if(_sckt->remPort != TCPH(source)) continue;             // another port.
-      goto found;                                              // found!
+      //TODO: goto found;                                              // found!
    }
 
-   goto drop;                                                  // no socket for the message.
+   //TODO: goto drop;                                                  // no socket for the message.
 
-found:
+//TODO: found:
    /*
     * Update socket data.
     */
@@ -529,7 +532,7 @@ found:
    _sckt->remPort = TCPH(source);
    _sckt->listening = FALSE;
 
-   if(IPH(protocol) == IP_PROTO_TCP) goto parse_tcp;
+   if(IPH(protocol) == IP_PROTO_TCP) ; //TODO: goto parse_tcp;
 
    /*
     * UDP message.
@@ -544,9 +547,9 @@ found:
    }
    
    ev = WEEIP_EV_DATA;
-   goto done;
+   //TODO: goto done;
 
-parse_tcp:
+//TODO: parse_tcp:
 
    //   printf(":");
    
@@ -575,7 +578,7 @@ parse_tcp:
             */
        if (_sckt->state>=_CONNECT) {
 	 printf("Drop\n");
-	 goto drop;
+	 //TODO: goto drop;
        }
       }
       _flags |= ACK;
@@ -622,7 +625,8 @@ parse_tcp:
      if (rel_sequence.d>_sckt->rx_size || rel_sequence.d+data_size>_sckt->rx_size) {
        // Ignore segments that we can't possibly handle
        //       printf("drop(a)");
-       if (data_size) { nwk_schedule_oo_ack(_sckt); goto drop; }
+       if (data_size) { nwk_schedule_oo_ack(_sckt); //TODO: goto drop; 
+                     }
      } else if (rel_sequence.w[0]==_sckt->rx_data) {
        // Copy to end of data in RX buffer
        //       printf("rx append %d@%d",data_size,_sckt->rx_data);
@@ -659,7 +663,8 @@ parse_tcp:
        _sckt->rx_oo_end = rel_sequence.w[0] + data_size;
      } else if (rel_sequence.d) {
        //       printf("drop(b)");
-       if (data_size) { nwk_schedule_oo_ack(_sckt); goto drop; }
+       if (data_size) { nwk_schedule_oo_ack(_sckt); //TODO: goto drop; 
+                      }
      }
 
      //     while(!PEEK(0xD610)) continue; POKE(0xD610,0);
@@ -678,8 +683,9 @@ parse_tcp:
 
       // Deliver data to programme
       if (_sckt->rx_data) {
-	_sckt->callback(WEEIP_EV_DATA);
-	remove_rx_data(_sckt);
+         task_t callback = _sckt->callback;
+	      (*callback)(WEEIP_EV_DATA);
+	      remove_rx_data(_sckt);
       }
       
       // And ACK every packet, because we don't have buffer space for multiple ones,
@@ -705,7 +711,7 @@ parse_tcp:
 	// Disconnect AND valid data
 	ev = WEEIP_EV_DISCONNECT_WITH_DATA;
       }
-      goto done;
+      //TODO: goto done;
    }
 
    // If FIN flag is set, then we also acknowledge all data so far,
@@ -873,9 +879,9 @@ parse_tcp:
          break;
    }
 
-   goto done;
+   //TODO: goto done;
 
- parse_icmp:
+ //TODO: parse_icmp:
 
    /*
      Parse ICMP messages.
@@ -927,9 +933,9 @@ parse_tcp:
    }
 #endif   
 
-   goto drop;
+   //TODO: goto drop;
    
-done:
+//TODO: done:
    /*
     * Verify if there are messages to send.
     * Add nwk_upstream() to send messages.
@@ -942,8 +948,8 @@ done:
 #ifdef DEBUG_ACK
       debug_msg("scheduling nwk_upstream 0 0");
 #endif
-      task_cancel(nwk_upstream);
-      task_add(nwk_upstream, 0, 0,"upstream");
+      task_cancel(&nwk_upstream);
+      task_add(&nwk_upstream, 0, 0,"upstream");
    }
 
    /*
@@ -951,10 +957,11 @@ done:
     * Add socket management task.
     */
    if(ev != WEEIP_EV_NONE) {
-     _sckt->callback(ev);
+      task_t callback = _sckt->callback;
+     (*callback)(ev);
      remove_rx_data(_sckt);
    }
 
-drop:
+//TODO: drop:
    return;
 }

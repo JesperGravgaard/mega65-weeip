@@ -161,7 +161,7 @@ byte_t dhcp_autoconfig_retry(byte_t b)
     
     // This will automatically re-add us to the list
     dhcp_send_query_or_request(0);
-    task_add(dhcp_autoconfig_retry, DHCP_RETRY_TICKS, 0,"dhcprtry");
+    task_add(&dhcp_autoconfig_retry, DHCP_RETRY_TICKS, 0,"dhcprtry");
   }
   return 0;
 }
@@ -174,8 +174,8 @@ bool_t dhcp_autoconfig(void)
   dhcp_acks=0;
   
   dhcp_socket = socket_create(SOCKET_UDP);
-  socket_set_callback(dhcp_reply_handler);
-  socket_set_rx_buffer(dns_buf,sizeof dns_buf);
+  socket_set_callback(&dhcp_reply_handler);
+  socket_set_rx_buffer(dns_buf,sizeof(dns_buf));
 
   dhcp_send_query_or_request(0);
 
@@ -183,8 +183,9 @@ bool_t dhcp_autoconfig(void)
   dhcp_configured=0;
 
   // Schedule ourselves to retransmit DHCP query until we are configured
-  task_add(dhcp_autoconfig_retry, DHCP_RETRY_TICKS, 0,"dhcprtry");
+  task_add(&dhcp_autoconfig_retry, DHCP_RETRY_TICKS, 0,"dhcprtry");
   
+  return 0;
   
 }
 

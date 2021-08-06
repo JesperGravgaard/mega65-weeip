@@ -1,6 +1,10 @@
 
+#pragma struct_model(classic)
+#pragma var_model(mem)
+
 #include <stdio.h>
 #include <string.h>
+#include <multiply.h>
 
 #include "task.h"
 #include "weeip.h"
@@ -52,7 +56,7 @@ unsigned short line_count;
 
 unsigned char disconnected=0;
 SOCKET *s;
-byte_t *buf=0xC000;
+byte_t *buf=(byte_t*)0xC000;
 
 /* Function that is used as a call-back on socket events
  * */
@@ -157,7 +161,7 @@ byte_t comunica (byte_t p)
 	  case HEADSKIP+8:
             // Work out how many bytes we can handle in one go.
             count = s->rx_data - i;
-            if (count>block_len) count=block_len;
+            if (count>block_len) count=(unsigned int)block_len;
 
             // Stash them and update it
             lcopy((unsigned long)&(((char *)s->rx)[i]),block_addr,count);
@@ -216,8 +220,8 @@ void prepare_network(void)
   
   // Setup WeeIP
   weeip_init();
-  task_cancel(eth_task);
-  task_add(eth_task, 0, 0,"eth");
+  task_cancel(&eth_task);
+  task_add(&eth_task, 0, 0,"eth");
 
   // Do DHCP auto-configuration
   dhcp_configured=0;
@@ -228,7 +232,7 @@ void prepare_network(void)
     // Let the mouse move around
     update_mouse_position(0);
   }
-  printf("My IP is %d.%d.%d.%d\n",
+  printf("My IP is %u.%u.%u.%u\n",
 	 ip_local.b[0],ip_local.b[1],ip_local.b[2],ip_local.b[3]);
 }      
 
@@ -250,14 +254,14 @@ void scroll_down(long distance)
   if (position<0) position=0;
   if (position>max_position) position=max_position;
 
-  screen_address_offset=(position/8)*(line_width*2);
+  screen_address_offset = mul16s( (int)(position/8), (int)(line_width*2) ); // (position/8)*(line_width*2);
   if (screen_address_offset<0) screen_address_offset=0;
   if (screen_address_offset>screen_address_offset_max) screen_address_offset=screen_address_offset_max;  
 
   if (position&7) {
     // Between chars, so we display part of the previous char
 //    screen_address_offset+=line_width*2;
-    POKE(0xD04E,0x60+7-(position&7));
+    POKE(0xD04E,0x60+7-(unsigned char)(position&7));
   } else {
     // On character boundary
     POKE(0xD04E,0x68);
@@ -274,7 +278,7 @@ void scroll_down(long distance)
   POKE(0xD065,(screen_address_offset>>8)+0x20);
 }
 
-void fetch_page(char *hostname,int port,char *path)
+void fetch_page(char *hostname, unsigned int port,char *path)
 {
   unsigned short i;
   IPV4 a;
@@ -288,20 +292,20 @@ void fetch_page(char *hostname,int port,char *path)
   POKE(0xD021,0x06);
   c64_40columns();
   
-restart_fetch:
+// TODO: restart_fetch:
 
-  printf("%cFetching %chttp://%s:%d%s\n",0x93,
+  printf("%cFetching %chttp://%s:%u%s\n",0x93,
 	 5,hostname,port,path);
   POKE(0x0286,0x0e);
 
   // NOTE: PETSCII so things are inverted
-  snprintf(buf,1024,
-	   "get %s http/1.1\n\r"
-	   "hOST: %s\n\r"
-	   "aCCEPT: */*\n\r"
-	   "uSER-aGENT: fetch mega65-weeip/20210727\n\r"
-	   "\n\r",
-	   path,hostname);
+  // TODO: snprintf(buf,1024,
+	// TODO:    "get %s http/1.1\n\r"
+	// TODO:    "hOST: %s\n\r"
+	// TODO:    "aCCEPT: */*\n\r"
+	// TODO:    "uSER-aGENT: fetch mega65-weeip/20210727\n\r"
+	// TODO:    "\n\r",
+	// TODO:    path,hostname);
   // Demunge PETSCII a bit
   for(i=0;buf[i];i++) {
     if (buf[i]>=0xc1) buf[i]-=0x60;
@@ -311,19 +315,19 @@ restart_fetch:
   page_parse_state=0;
 
   // Clear all memory out from last page
-  lfill(0x12000L,0,0xD800);
+  lfill(0x12000UL,0,0xD800);
   // Erase screen
-  for(i=0;i<24*1024;i+=2) lpoke(0x12000L+i,' ');
-  lfill(0xFF82000L,0,0x6000);
-  lfill(0x40000L,0,0x0000); // 0 means 64KB
-  lfill(0x50000L,0,0x0000);
+  for(i=0;i<24*1024;i+=2) lpoke(0x12000UL+i,' ');
+  lfill(0xFF82000UL,0,0x6000);
+  lfill(0x40000UL,0,0x0000); // 0 means 64KB
+  lfill(0x50000UL,0,0x0000);
   
   // Clear any partial match to h65+$ff header
   last_bytes[3]=0;
   
   printf("Resolving %s\n",hostname);
   if (dns_hostname_to_ip(hostname,&a)) {
-    printf("Resolved to %d.%d.%d.%d\n",
+    printf("Resolved to %u.%u.%u.%u\n",
 	   a.b[0],a.b[1],a.b[2],a.b[3]);
   } else {
     printf("Failed to resolve hostname.\n");
@@ -331,7 +335,7 @@ restart_fetch:
   }
   
   s = socket_create(SOCKET_TCP);
-  socket_set_callback(comunica);
+  socket_set_callback(&comunica);
   socket_set_rx_buffer(buf, 2048);
   socket_connect(&a,port);
 
@@ -344,13 +348,13 @@ restart_fetch:
     if (h65_error) break;
     switch(PEEK(0xD610)) {
       case 0x52: case 0x72:  // Restart fetch
-        socket_disconnect(s);
+        socket_disconnect(); // WAS: socket_disconnect(s);
         POKE(0xD610,0);
-        goto restart_fetch;
+        // TODO: goto restart_fetch;
       case 0x03:
         // control-c / RUN/STOP -- abort fetch
         POKE(0xD610,0);
-        socket_disconnect(s);
+        socket_disconnect(); // WAS: socket_disconnect(s);
         // XXX Should allow user to enter URL
         return;
     }
@@ -358,8 +362,8 @@ restart_fetch:
 
   // Close socket, and call network loop a few times to make sure the FIN ACK gets
   // sent.
-  printf("Disconnecting... %d\n",h65_error);
-  socket_disconnect(s);
+  printf("Disconnecting... %u\n",h65_error);
+  socket_disconnect(); // WAS: socket_disconnect(s);
   for(i=0;0<16;i++) {
     task_periodic();
     if (disconnected) break;
@@ -394,12 +398,12 @@ void update_mouse_position(unsigned char do_scroll)
   mouse_update_position(&mx,&my);
   if (my<50) {
     // Mouse is in top border, so scroll up by that amount
-    scroll_down(my-50L);
+    scroll_down((long)(my-50L));
     mouse_warp_to(mx,50);
     my=50;
   } else if (my>249) {
     // Mouse is in bottom border, so scroll down by that amount
-    scroll_down((my-249));
+    scroll_down((long)(my-249));
     mouse_warp_to(mx,249);
     my=249;
   }
@@ -408,18 +412,18 @@ void update_mouse_position(unsigned char do_scroll)
     
     // Work out mouse position
     // Mouse is in H320, V200, so only 4 mouse pixels per character
-    my=((position/2)+my-50)/4;
+    my= (unsigned short)  ((position/2)+my-50)/4;
     mx=(mx-24)/4;
     
     // Don't check mouse clicks until scrolling is done  
 
     if (do_scroll) {
       // Check all bounding boxes
-      i=lpeek(0x18000L)+(lpeek(0x18001L)<<8);
+      i=lpeek(0x18000UL)+(lpeek(0x18001UL)<<8);
       if (i>1000) i=1000;
       while (i>0) {
 	i--;
-	mouse_link_address=0x18002+6*i;
+	mouse_link_address=0x18002+i*6;
 	lcopy(mouse_link_address,(unsigned long)&link_box[0],6);
 	
 	mouse_link_address=0;
@@ -428,7 +432,7 @@ void update_mouse_position(unsigned char do_scroll)
 	if (link_box[4]<mx) continue;
 	if (link_box[5]<my) continue;
 	// Get address of URL
-	mouse_link_address=0x18000L+link_box[0]+(link_box[1]<<8);
+	mouse_link_address=0x18000UL+link_box[0]+(link_box[1]<<8);
 	break;
       } 
     }
@@ -440,7 +444,7 @@ void update_mouse_position(unsigned char do_scroll)
 
 void show_page(void)
 {
-  printf("h65_error=%d\n",h65_error);
+  printf("h65_error=%u\n",h65_error);
 
 #if 0
   POKE(0x0400,h65_error);
@@ -452,7 +456,7 @@ void show_page(void)
 #endif
 
   if (h65_error!=H65_DONE) {
-    printf("h65_error=%d\nPress almost any key to continue...\n",h65_error);
+    printf("h65_error=%u\nPress almost any key to continue...\n",h65_error);
     while(!PEEK(0xD610)) continue;
     POKE(0xD610,0);
   } else if (h65_error==H65_DONE) {
@@ -486,8 +490,8 @@ void show_page(void)
     max_position=0;
 
     if (line_count>50) {
-      screen_address_offset_max=(line_width*2)*(line_count-50);
-      max_position=(line_count-50)*8;
+      screen_address_offset_max = mul16s( (int)(line_width*2), (int)(line_count-50) ) ;
+      max_position = (long)((line_count-50)*8);
     }
 
 #if 0
@@ -505,7 +509,7 @@ void show_page(void)
 // as PETSCII, so text must be upper case here, which will resolve to lower-case
 char hostname[64]="203.28.176.1";
 char path[128]="/INDEX.H65";
-int port=8000;
+unsigned int port=8000;
 
 char httpcolonslashslash[8]={0x68,0x74,0x74,0x70,':','/','/',0};
 char indexdoth65[11]={'/',0x69,0x6e,0x64,0x65,0x78,'.',0x68,0x36,0x35,0};
@@ -518,7 +522,7 @@ void parse_url(unsigned long addr)
   // since there should be no need to parse URLs, while there
   // is outstanding TCP RX data, since we load pages entirely
   // before allowing clicking on links etc
-  lcopy(addr,(unsigned char *)buf,256);  
+  lcopy(addr,(unsigned long)buf,256);  
 
   printf("Parsing '%s'\n",buf);
   
@@ -536,7 +540,7 @@ void parse_url(unsigned long addr)
     lfill(0xD000+80*3,0x20,160);
     if (buf[0]=='/') {
       // Put http://host:port on front of paths
-      snprintf(&buf[256],256,"%s%s:%d%s",httpcolonslashslash,hostname,port,buf);
+      // TODO: snprintf(&buf[256],256,"%s%s:%d%s",httpcolonslashslash,hostname,port,buf);
       lcopy((unsigned long)&buf[256],0xD000+80*3,strlen(&buf[256]));
     } else
       // Otherwise leave path untouched
@@ -546,7 +550,7 @@ void parse_url(unsigned long addr)
   hlen=0;
   url_ofs=0;
   plen=0;
-  if (!strncmp(httpcolonslashslash,buf,7)) url_ofs=7;
+  // TODO: if (!strncmp(httpcolonslashslash,buf,7)) url_ofs=7;
   while(buf[url_ofs]!=' '&&buf[url_ofs]&&buf[url_ofs]!='/'&&buf[url_ofs]!=':')
     {
       if (hlen<64) { hostname[hlen++]=buf[url_ofs++]; hostname[hlen]=0; }
@@ -609,9 +613,9 @@ void select_url(void)
   screen_address_offset_max=0;
 
   // Reset screen colour
-  lfill(0xFF81000L,0x0e,2000);
+  lfill(0xFF81000UL,0x0e,2000);
   // Underline and reset colour of heading
-  lfill(0xff81000,0x87,19);
+  lfill(0xff81000UL,0x87,19);
 
   while(1) {
 
@@ -721,17 +725,17 @@ void main(void)
 
   POKE(0,65);
   mega65_io_enable();
-  srand(random32(0));
+  srand32(random32(0));
 
   // Clear out URL history area
-  lfill(0xD000L,0x20,4096);
-  lcopy((unsigned long)type_url,0xD000L,19);
+  lfill(0xD000UL,0x20,4096);
+  lcopy((unsigned long)type_url,0xD000UL,19);
   
   // Give ethernet interface time to auto negotiate etc
   eth_init();
 
   // Get initial mouse position
-  mouse_update_position(NULL,NULL);
+  mouse_update_position((unsigned short*)NULL,(unsigned short*)NULL);
   mouse_warp_to(160,100);
   mouse_bind_to_sprite(0);
   mouse_update_pointer();

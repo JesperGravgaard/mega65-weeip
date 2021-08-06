@@ -150,7 +150,7 @@ typedef union {
          TCP_HDR tcp;            ///< TCP header access.
          UDP_HDR udp;            ///< UDP header access.
       } t;
-   };
+   } iph;
 } HEADER;
 
 #endif

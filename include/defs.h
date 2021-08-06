@@ -38,19 +38,14 @@
 #if defined(__CPIK__)
 #define uint32_t unsigned long long int
 #define uint16_t unsigned long int
-
 #define int32_t long long int
 #define int16_t long int
 #define int8_t int
+#define uint8_t unsigned char
 #elif defined(__CC65__) || defined(__KICKC__)
-#define uint32_t unsigned long int
-#define uint16_t unsigned short int
-#define int32_t long int
-#define int16_t short int
-#define int8_t signed char
+#include <stdint.h>
 #endif
 
-#define uint8_t unsigned char
 #define byte_t unsigned char
 
 typedef unsigned char * buffer_t;

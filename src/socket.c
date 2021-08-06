@@ -73,19 +73,19 @@ socket_create
     * Find an unused socket.
     */
    for_each(_sockets, _sckt) {
-      if(_sckt->type == SOCKET_FREE) goto found;
+      if(_sckt->type == SOCKET_FREE) ; //TODO: goto found;
    }
    
-   return NULL;
+   return (SOCKET*)NULL;
 
-found:
+//TODO: found:
    /*
     * Initialize socket structure.
     */
    memset((void*)_sckt, 0, sizeof(SOCKET));
    _sckt->type = protocol;
-   _sckt->seq.w[0] = rand32(0);
-   _sckt->seq.w[1] = rand32(0);
+   _sckt->seq.w[0] = (uint16_t)rand32(0);
+   _sckt->seq.w[1] = (uint16_t)rand32(0);
    return _sckt;
 }
 
@@ -120,7 +120,7 @@ socket_select
 void 
 socket_set_rx_buffer
    (buffer_t b,
-   int size)
+   unsigned int size)
 {
    if(_sckt == NULL) return;
    _sckt->rx = b;
@@ -208,8 +208,8 @@ socket_connect
    _sckt->state = _SYN_SENT;
    _sckt->toSend = SYN;
    _sckt->retry = RETRIES_TCP;
-   task_cancel(nwk_upstream);
-   task_add(nwk_upstream, 0, 0,"upstream");
+   task_cancel(&nwk_upstream);
+   task_add(&nwk_upstream, 0, 0,"upstream");
    return TRUE;
 }
 
@@ -222,7 +222,7 @@ socket_connect
 bool_t 
 socket_send
    (buffer_t fdata,
-   int size)
+   unsigned int size)
 {
    if(_sckt == NULL) return FALSE;
    if(_sckt->state != _CONNECT) return FALSE;
@@ -237,8 +237,8 @@ socket_send
    _sckt->tx_size = size;
    _sckt->toSend = ACK | PSH;
    _sckt->retry = RETRIES_TCP;
-   task_cancel(nwk_upstream);
-   task_add(nwk_upstream, 0, 0,"upstream");
+   task_cancel(&nwk_upstream);
+   task_add(&nwk_upstream, 0, 0,"upstream");
    return TRUE;
 }
 
@@ -279,8 +279,8 @@ socket_disconnect()
    _sckt->toSend = FIN | ACK;
    _sckt->retry = RETRIES_TCP;
 
-   task_cancel(nwk_upstream);
-   task_add(nwk_upstream, 0, 0,"upstream");
+   task_cancel(&nwk_upstream);
+   task_add(&nwk_upstream, 0, 0,"upstream");
    return TRUE;
 }
 
@@ -294,8 +294,8 @@ socket_reset()
    if(_sckt->type != SOCKET_TCP) return;
    if(_sckt->state != _IDLE) {
       _sckt->toSend = RST;
-      task_cancel(nwk_upstream);
-      task_add(nwk_upstream, 0, 0,"upstream");
+      task_cancel(&nwk_upstream);
+      task_add(&nwk_upstream, 0, 0,"upstream");
    }
    _sckt->state = _IDLE;
 }
@@ -310,7 +310,7 @@ weeip_init()
    _sckt = _sockets;
    port_used = PORT_MIN + (rand16(PORT_MAX - PORT_MIN+1));
    id = rand16(0);
-   task_add(nwk_tick, TICK_TCP, 0,"nwktick");
+   task_add(&nwk_tick, TICK_TCP, 0,"nwktick");
    eth_init();
    arp_init();
 }

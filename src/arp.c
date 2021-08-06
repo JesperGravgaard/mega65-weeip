@@ -298,7 +298,7 @@ arp_tick
    /*
     * Reschedule for periodic execution.
     */
-   task_add(arp_tick, ARP_TICK_TIME, 0,"arptick");
+   task_add(&arp_tick, ARP_TICK_TIME, 0,"arptick");
    return 0;
 }
 
@@ -314,5 +314,5 @@ arp_init
    for_each(arp_cache, i) {
       i->time = 0;
    }
-   task_add(arp_tick, ARP_TICK_TIME, 0,"arptick");
+   task_add(&arp_tick, ARP_TICK_TIME, 0,"arptick");
 }

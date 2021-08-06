@@ -118,7 +118,7 @@ uint8_t eth_task (uint8_t p)
   // XXX Kludge until the Ethernet controller gets updated to have a working
   // RX ready flag.
   if (((cpu_side-eth_side)&3)==3) {
-    task_add(eth_task, 10, 0,"ethtask");
+    task_add(&eth_task, 10, 0,"ethtask");
     return 0;
   }
 #endif
@@ -135,13 +135,13 @@ uint8_t eth_task (uint8_t p)
   if (eth_log_mode&ETH_LOG_RX) {
     getrtc(&tm);
     debug_msg("");
-    snprintf(dbg_msg,80,"%02d:%02d:%02d/%d eth rx\n",tm.tm_hour,tm.tm_min,tm.tm_sec,PEEK(0xD012));
-    debug_msg(dbg_msg);
+    // TODO: snprintf(dbg_msg,80,"%02d:%02d:%02d/%d eth rx\n",tm.tm_hour,tm.tm_min,tm.tm_sec,PEEK(0xD012));
+    // TODO: debug_msg(dbg_msg);
     for(i=0;i<2048;i+=16) {
       lcopy(ETH_RX_BUFFER+i,(unsigned long)sixteenbytes,16);
-      snprintf(dbg_msg,80,"  %04x : ",i);
-      for(j=0;j<16;j++) snprintf(&dbg_msg[strlen(dbg_msg)],80-strlen(dbg_msg)," %02x",sixteenbytes[j]);
-      debug_msg(dbg_msg);
+      // TODO: snprintf(dbg_msg,80,"  %04x : ",i);
+      // TODO: for(j=0;j<16;j++) snprintf(&dbg_msg[strlen(dbg_msg)],80-strlen(dbg_msg)," %02x",sixteenbytes[j]);
+      // TODO: debug_msg(dbg_msg);
     }
   }
   
@@ -161,8 +161,9 @@ uint8_t eth_task (uint8_t p)
     /*
      * Not broadcast, check if it matches the local address.
      */
-    if(memcmp(&eth_header.destination, &mac_local, sizeof(EUI48)))
-      goto drop;
+    // TODO: if(memcmp(&eth_header.destination, &mac_local, sizeof(EUI48)))
+    // TODO:   ;
+      // TODO: goto drop;
   }
   
   /*
@@ -175,7 +176,7 @@ uint8_t eth_task (uint8_t p)
      */
     lcopy(ETH_RX_BUFFER+2+14,(uint32_t)&_header, sizeof(ARP_HDR));
     arp_mens();   
-    goto drop;
+    //TODO: goto drop;
   }
   else if(eth_header.type == 0x0008) {            // big-endian for 0x0800
     /*
@@ -183,19 +184,19 @@ uint8_t eth_task (uint8_t p)
      * Verify transport protocol to load header.
      */
     lcopy(ETH_RX_BUFFER+2+14,(uint32_t)&_header, sizeof(IP_HDR));
-    update_cache(&_header.ip.source, &eth_header.source);
-    switch(_header.ip.protocol) {
+    update_cache(&_header.iph.ip.source, &eth_header.source);
+    switch(_header.iph.ip.protocol) {
     case IP_PROTO_UDP:
-      lcopy(ETH_RX_BUFFER+2+14+sizeof(IP_HDR),(uint32_t)&_header.t.udp, sizeof(UDP_HDR));
+      lcopy(ETH_RX_BUFFER+2+14+sizeof(IP_HDR),(uint32_t)&_header.iph.t.udp, sizeof(UDP_HDR));
       break;
     case IP_PROTO_TCP:
-      lcopy(ETH_RX_BUFFER+2+14+sizeof(IP_HDR),(uint32_t)&_header.t.tcp, sizeof(TCP_HDR));
+      lcopy(ETH_RX_BUFFER+2+14+sizeof(IP_HDR),(uint32_t)&_header.iph.t.tcp, sizeof(TCP_HDR));
       break;
     case IP_PROTO_ICMP:
-      lcopy(ETH_RX_BUFFER+2+14+sizeof(IP_HDR),(uint32_t)&_header.t.icmp, sizeof(ICMP_HDR));
+      lcopy(ETH_RX_BUFFER+2+14+sizeof(IP_HDR),(uint32_t)&_header.iph.t.icmp, sizeof(ICMP_HDR));
       break;
     default:
-      goto drop;
+      //TODO: goto drop;
     }
 
     nwk_downstream();
@@ -204,15 +205,15 @@ uint8_t eth_task (uint8_t p)
     //    printf("Unknown ether type $%04x\n",eth_header.type);
   }
   
- drop:
+ // TODO: drop:
   eth_drop();
   // We processed a packet, so schedule ourselves immediately, in case there
   // are more packets coming.
-  task_add(eth_task, 0, 0,"ethtask");                    // try again to check more packets.
+  task_add(&eth_task, 0, 0,"ethtask");                    // try again to check more packets.
   return 0;
 }
 
-#define IPH(X) _header.ip.X
+#define IPH(X) _header.iph.ip.X
 
 void eth_write(uint8_t *buf,uint16_t len)
 {
@@ -241,12 +242,12 @@ void eth_packet_send(void)
   if (eth_log_mode&ETH_LOG_TX) {
     getrtc(&tm);
     debug_msg("");
-    snprintf(dbg_msg,80,"%02d:%02d:%02d/%d eth tx\n",tm.tm_hour,tm.tm_min,tm.tm_sec,PEEK(0xD012));
-    debug_msg(dbg_msg);
+    // TODO: snprintf(dbg_msg,80,"%02d:%02d:%02d/%d eth tx\n",tm.tm_hour,tm.tm_min,tm.tm_sec,PEEK(0xD012));
+    // TODO: debug_msg(dbg_msg);
     for(i=0;i<eth_tx_len;i+=16) {
-      snprintf(dbg_msg,80,"  %04x : ",i);
-      for(j=0;j<16;j++) snprintf(&dbg_msg[strlen(dbg_msg)],80-strlen(dbg_msg)," %02x",tx_frame_buf[i+j]);
-      debug_msg(dbg_msg);
+      // TODO: snprintf(dbg_msg,80,"  %04x : ",i);
+      // TODO: for(j=0;j<16;j++) snprintf(&dbg_msg[strlen(dbg_msg)],80-strlen(dbg_msg)," %02x",tx_frame_buf[i+j]);
+      // TODO: debug_msg(dbg_msg);
     }
   }
   

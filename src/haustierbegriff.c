@@ -61,15 +61,15 @@ const struct bbs bbs_list[27]=
 void interrupt_handler(void)
 {
       tick();
-      i_task_cancel(eth_task);
-      i_task_add(eth_task, 0, 0);
+      i_task_cancel(&eth_task);
+      i_task_add(&eth_task, 0, 0);
 }
 
 /* No idea what this does. */
 byte_t pisca (byte_t p)
 {
   // Just adds itself to be run periodically?
-   task_add(pisca, 32, !p);
+   task_add(&pisca, 32, !p);
    return 0; // XXX and what should it return?
 }
 
@@ -132,7 +132,7 @@ void main(void)
   
   POKE(0,65);
   mega65_io_enable();
-  srand(random32(0));
+  srand32(random32(0));
 
   POKE(0xD020,0);
   POKE(0xD021,0);
